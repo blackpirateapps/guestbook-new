@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Raw Guestbook</title>
-    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -48,28 +47,32 @@
                 container.innerHTML = ''; 
 
                 data.forEach(entry => {
-                    // Create a DIV instead of LI
                     const entryDiv = document.createElement('div');
-                    
-                    // Add the class "entry"
                     entryDiv.className = 'entry';
                     
+                    // Sanitize text content
                     const nameSafe = document.createTextNode(entry.name).textContent;
-                    // Preserve newlines
                     const msgSafe = document.createTextNode(entry.message).textContent.replace(/\n/g, '<br>');
                     const dateSafe = new Date(entry.created_at).toLocaleString();
                     
-                    let authorHtml = `<strong>${nameSafe}</strong>`;
+                    // Prepare Website HTML
+                    let websiteHtml = '';
                     if (entry.website) {
                         const urlSafe = encodeURI(entry.website);
-                        authorHtml = `<a href="${urlSafe}" target="_blank"><strong>${nameSafe}</strong></a>`;
+                        const urlDisplay = document.createTextNode(entry.website).textContent;
+                        
+                        // Link displayed below the name
+                        websiteHtml = `
+                            <div style="font-size: 0.85em; margin-top: 2px;">
+                                <a href="${urlSafe}" target="_blank">${urlDisplay}</a>
+                            </div>`;
                     }
 
-                    // Structure inside the div
+                    // Assemble the HTML
                     entryDiv.innerHTML = `
-                        ${authorHtml} <small>(${dateSafe})</small>
-                        <a href="${urlSafe}" target="_blank"><strong>${urlSafe}</strong></a>
-                        <p>${msgSafe}</p>
+                        <strong>${nameSafe}</strong> <small>(${dateSafe})</small>
+                        ${websiteHtml}
+                        <p style="margin-top: 10px;">${msgSafe}</p>
                         <hr>
                     `;
                     

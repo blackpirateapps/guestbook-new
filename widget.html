@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sudip's Guestbook Banner</title>
+<style>
+    /* PREVIEW CENTERING (Ignore this when embedding) */
+    body {
+        margin: 0;
+        padding: 0;
+        background: #333;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    /* BANNER STYLES - Copy CSS from here down for embedding */
+    .banner-link {
+        text-decoration: none;
+        display: block;
+        width: 100%;
+        max-width: 468px; /* Restrict max width to standard banner size */
+    }
+
+    .banner-container {
+        width: 100%; /* Make width fluid */
+        height: 60px;
+        background-color: #000000;
+        position: relative;
+        overflow: hidden;
+        font-family: 'Verdana', sans-serif;
+        cursor: pointer;
+        display: block;
+        box-sizing: border-box;
+    }
+
+    /* Flashing Border Animation */
+    .flashing-border {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border: 4px solid red;
+        z-index: 10;
+        animation: rainbow-border 0.6s infinite; /* Slowed down from 0.2s */
+        pointer-events: none;
+    }
+
+    @keyframes rainbow-border {
+        0% { border-color: #FF0000; }
+        33% { border-color: #00FF00; }
+        66% { border-color: #0000FF; }
+        100% { border-color: #FFFF00; }
+    }
+
+    /* Background Pattern */
+    .banner-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: repeating-linear-gradient(
+            45deg,
+            #000,
+            #000 10px,
+            #222 10px,
+            #222 20px
+        );
+        z-index: 1;
+    }
+
+    /* Content Layout */
+    .content-layer {
+        position: relative;
+        z-index: 5;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 10px 16px 10px; /* Added bottom padding to lift content above larger scroller */
+        box-sizing: border-box;
+    }
+
+    /* Responsive Adjustments for Mobile */
+    @media (max-width: 380px) {
+        .warning {
+            display: none; /* Hide icon on small screens to save space */
+        }
+        .title {
+            font-size: 14px;
+        }
+        .subtitle {
+            font-size: 11px;
+        }
+        .click-btn {
+            font-size: 10px;
+            padding: 3px 5px;
+        }
+    }
+
+    /* Main Jittery Text */
+    .main-text {
+        text-align: center;
+        line-height: 1.1;
+    }
+
+    .title {
+        color: #FFFF00;
+        font-weight: bold;
+        font-size: 16px;
+        text-shadow: 2px 2px #FF0000;
+        text-transform: uppercase;
+        display: block;
+        animation: jitter 0.1s infinite;
+    }
+
+    .subtitle {
+        color: #00FFFF;
+        font-size: 13px; /* Increased size */
+        font-family: 'Courier New', monospace;
+        letter-spacing: 1px;
+        font-weight: bold; /* Added bold */
+    }
+
+    @keyframes jitter {
+        0% { transform: translate(0,0); }
+        25% { transform: translate(1px, 1px); }
+        50% { transform: translate(-1px, -1px); }
+        75% { transform: translate(-1px, 1px); }
+        100% { transform: translate(0,0); }
+    }
+
+    /* The 'Click Here' Button */
+    .click-btn {
+        background: #C0C0C0;
+        border-top: 2px solid #FFF;
+        border-left: 2px solid #FFF;
+        border-bottom: 2px solid #000;
+        border-right: 2px solid #000;
+        color: black;
+        font-size: 11px;
+        padding: 4px 8px;
+        font-weight: bold;
+        text-transform: uppercase;
+        animation: blink-bg 1s infinite; /* Slowed down from 0.5s */
+        box-shadow: 2px 2px 0 #000;
+    }
+
+    @keyframes blink-bg {
+        0% { background: #C0C0C0; }
+        50% { background: #FF00FF; color: white; }
+        100% { background: #C0C0C0; }
+    }
+
+    /* Scrolling Marquee at bottom */
+    .scroller {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 18px; /* Increased height */
+        background: #000080; /* Navy */
+        color: #FFFFFF;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 12px; /* Increased font size */
+        line-height: 18px; /* Adjusted line height */
+        white-space: nowrap;
+        overflow: hidden;
+        z-index: 6;
+        border-top: 1px solid #FFF;
+    }
+
+    .scroller span {
+        display: inline-block;
+        padding-left: 100%;
+        animation: marquee 8s linear infinite; /* Slowed down */
+        font-weight: bold;
+    }
+
+    @keyframes marquee {
+        0% { transform: translate(0, 0); }
+        100% { transform: translate(-100%, 0); }
+    }
+
+    /* Warning icon spin */
+    .warning {
+        font-size: 28px;
+        animation: spin 1s steps(8) infinite;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+</style>
+</head>
+<body>
+
+    <!-- EMBED CODE START -->
+    <a href="https://guestbook.blackpiratex.com" target="_blank" class="banner-link">
+        <div class="banner-container">
+            <div class="flashing-border"></div>
+            <div class="banner-bg"></div>
+            
+            <div class="content-layer">
+                <div class="warning">☢️</div>
+                <div class="main-text">
+                    <span class="title">Sudip's Guestbook</span>
+                    <span class="subtitle">www.blackpiratex.com</span>
+                </div>
+                <div class="click-btn">CLICK ME!</div>
+            </div>
+
+            <div class="scroller">
+                <span>*** VISIT BLACKPIRATEX.COM TODAY! *** CONGRATULATIONS! YOU ARE THE 999,999th VISITOR! *** CLICK HERE TO CLAIM YOUR FREE MIDI FILES ***</span>
+            </div>
+        </div>
+    </a>
+    <!-- EMBED CODE END -->
+
+</body>
+</html>

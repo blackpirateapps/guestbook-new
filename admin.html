@@ -7,15 +7,42 @@
     <style>
         body { font-family: monospace; max-width: 800px; margin: 20px auto; padding: 0 10px; }
         .login-box { border: 1px solid #ccc; padding: 20px; max-width: 300px; margin: 50px auto; }
-        .entry { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; background: #f9f9f9; }
-        .pagination { margin: 20px 0; }
-        button { cursor: pointer; }
-        input, textarea { width: 100%; box-sizing: border-box; margin-bottom: 5px; }
+        
+        /* Collapsible Styling */
+        details.entry-details { 
+            border: 1px solid #ddd; 
+            margin-bottom: 5px; 
+            background: #fff;
+        }
+        details.entry-details summary {
+            padding: 10px;
+            background: #f0f0f0;
+            cursor: pointer;
+            list-style: none; /* Hide default triangle in some browsers */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        details.entry-details summary:hover { background: #e0e0e0; }
+        details.entry-details[open] summary { border-bottom: 1px solid #ddd; }
+        
+        /* Custom arrow for summary */
+        details.entry-details summary::after { content: '+'; font-weight: bold; }
+        details.entry-details[open] summary::after { content: '-'; }
+
+        .entry-content { padding: 15px; }
+
+        .pagination { margin: 20px 0; text-align: center;}
+        button { cursor: pointer; padding: 5px 10px; }
+        input, textarea, select { width: 100%; box-sizing: border-box; margin-bottom: 8px; padding: 5px; }
         .hidden { display: none; }
-        .actions { margin-top: 5px; }
-        .danger { color: red; }
+        .actions { margin-top: 10px; display: flex; gap: 10px;}
+        .danger { background-color: #ffcccc; border: 1px solid red; color: darkred; }
+        
+        .row { display: flex; gap: 10px; align-items: center;}
+        .col { flex: 1; }
+        label { font-size: 0.8em; color: #666; display: block; margin-bottom: 2px;}
     </style>
-    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -26,18 +53,30 @@
     </div>
 
     <div id="dashboard" class="hidden">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
             <h1>Admin Dashboard</h1>
             <button onclick="logout()">Logout</button>
         </div>
 
-        <details>
-            <summary><strong>+ Add / Import Entry</strong></summary>
-            <div style="border: 1px solid #000; padding: 10px; margin-top: 10px;">
-                <input type="text" id="new-name" placeholder="Name">
-                <input type="text" id="new-website" placeholder="Website (optional)">
-                <input type="text" id="new-date" placeholder="YYYY-MM-DDTHH:MM:SSZ (leave blank for now)">
-                <textarea id="new-message" placeholder="Message"></textarea>
+        <details style="border: 2px solid #333; margin-bottom: 20px;">
+            <summary style="padding: 10px; background: #333; color: white; cursor: pointer;"><strong>+ Add New / Import Entry</strong></summary>
+            <div style="padding: 15px; border: 1px solid #333; border-top: none;">
+                <label>Name</label>
+                <input type="text" id="new-name">
+                
+                <label>Website</label>
+                <input type="text" id="new-website">
+                
+                <label>Created At (ISO String)</label>
+                <div class="row">
+                    <div class="col"><input type="text" id="new-date-raw" placeholder="YYYY-MM-DDTHH:MM:SSZ"></div>
+                    <div class="col" style="flex: 0 0 40px; text-align: center;">OR</div>
+                    <div class="col"><input type="datetime-local" onchange="syncDate(this, 'new-date-raw')"></div>
+                </div>
+
+                <label>Message</label>
+                <textarea id="new-message" rows="3"></textarea>
+                
                 <button onclick="addEntry()">Save Entry</button>
             </div>
         </details>
@@ -48,7 +87,7 @@
 
         <div class="pagination">
             <button onclick="changePage(-1)">Previous</button>
-            <span id="page-indicator">Page 1</span>
+            <span id="page-indicator" style="margin: 0 15px;">Page 1</span>
             <button onclick="changePage(1)">Next</button>
         </div>
     </div>
@@ -57,7 +96,6 @@
         let SECRET = localStorage.getItem('admin_secret') || '';
         let CURRENT_PAGE = 1;
 
-        // --- AUTH ---
         if (SECRET) showDashboard();
 
         function login() {
@@ -79,7 +117,16 @@
             loadEntries();
         }
 
-        // --- API CALLER ---
+        // Helper: Convert local datetime picker value to ISO string for the raw input
+        function syncDate(picker, rawInputId) {
+            if(picker.value) {
+                // Create date object from picker value
+                const d = new Date(picker.value);
+                // Convert to ISO string for DB
+                document.getElementById(rawInputId).value = d.toISOString();
+            }
+        }
+
         async function api(action, data = {}) {
             const res = await fetch('/api/admin', {
                 method: 'POST',
@@ -98,8 +145,6 @@
             return json;
         }
 
-        // --- CRUD ACTIONS ---
-
         async function loadEntries() {
             const data = await api('list', { page: CURRENT_PAGE });
             if (!data) return;
@@ -109,24 +154,34 @@
             document.getElementById('page-indicator').innerText = `Page ${data.page} (Total: ${data.total})`;
 
             data.rows.forEach(row => {
-                const div = document.createElement('div');
-                div.className = 'entry';
-                div.innerHTML = `
-                    <div>
-                        <strong>ID:</strong> ${row.id} | 
-                        <strong>Date:</strong> ${row.created_at}
-                    </div>
-                    <div style="margin-top:5px;">
+                const details = document.createElement('details');
+                details.className = 'entry-details';
+                
+                // Format date for display in summary
+                const dateDisplay = new Date(row.created_at).toLocaleString();
+                
+                details.innerHTML = `
+                    <summary>
+                        <span><strong>#${row.id}</strong> ${row.name}</span>
+                        <span style="font-size:0.8em; color:#666;">${dateDisplay}</span>
+                    </summary>
+                    <div class="entry-content">
+                        <label>Name</label>
                         <input type="text" value="${row.name}" id="name-${row.id}">
-                        <input type="text" value="${row.website || ''}" placeholder="Website" id="site-${row.id}">
-                        <textarea rows="2" id="msg-${row.id}">${row.message}</textarea>
-                    </div>
-                    <div class="actions">
-                        <button onclick="updateEntry(${row.id})">Save Changes</button>
-                        <button class="danger" onclick="deleteEntry(${row.id})">Delete</button>
+                        
+                        <label>Website</label>
+                        <input type="text" value="${row.website || ''}" id="site-${row.id}">
+                        
+                        <label>Message</label>
+                        <textarea rows="4" id="msg-${row.id}">${row.message}</textarea>
+
+                        <div class="actions">
+                            <button onclick="updateEntry(${row.id})">Save Changes</button>
+                            <button class="danger" onclick="deleteEntry(${row.id})">Delete Entry</button>
+                        </div>
                     </div>
                 `;
-                container.appendChild(div);
+                container.appendChild(details);
             });
         }
 
@@ -134,7 +189,7 @@
             const name = document.getElementById('new-name').value;
             const website = document.getElementById('new-website').value;
             const message = document.getElementById('new-message').value;
-            const created_at = document.getElementById('new-date').value;
+            const created_at = document.getElementById('new-date-raw').value;
 
             if (!name || !message) return alert('Name and Message required');
 
@@ -145,7 +200,7 @@
                 document.getElementById('new-name').value = '';
                 document.getElementById('new-website').value = '';
                 document.getElementById('new-message').value = '';
-                document.getElementById('new-date').value = '';
+                document.getElementById('new-date-raw').value = '';
                 loadEntries();
             }
         }

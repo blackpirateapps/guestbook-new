@@ -30,26 +30,31 @@
     <hr>
 
     <h2>Messages</h2>
-    <ul id="entries-list">
-        <li>Loading...</li>
-    </ul>
+    
+    <div id="entries-container">
+        Loading...
+    </div>
 
     <script>
         const form = document.getElementById('guestbook-form');
-        const list = document.getElementById('entries-list');
+        const container = document.getElementById('entries-container');
 
         async function loadEntries() {
             try {
                 const res = await fetch('/api/guestbook');
                 const data = await res.json();
 
-                list.innerHTML = ''; 
+                container.innerHTML = ''; 
 
                 data.forEach(entry => {
-                    const li = document.createElement('li');
+                    // Create a DIV instead of LI
+                    const entryDiv = document.createElement('div');
+                    
+                    // Add the class "entry"
+                    entryDiv.className = 'entry';
                     
                     const nameSafe = document.createTextNode(entry.name).textContent;
-                    // We preserve newlines in the display for long messages
+                    // Preserve newlines
                     const msgSafe = document.createTextNode(entry.message).textContent.replace(/\n/g, '<br>');
                     const dateSafe = new Date(entry.created_at).toLocaleString();
                     
@@ -59,11 +64,17 @@
                         authorHtml = `<a href="${urlSafe}" target="_blank"><strong>${nameSafe}</strong></a>`;
                     }
 
-                    li.innerHTML = `${authorHtml} (${dateSafe}): <br> <div style="margin-top:5px;">${msgSafe}</div>`;
-                    list.appendChild(li);
+                    // Structure inside the div
+                    entryDiv.innerHTML = `
+                        ${authorHtml} <small>(${dateSafe})</small>
+                        <p>${msgSafe}</p>
+                        <hr>
+                    `;
+                    
+                    container.appendChild(entryDiv);
                 });
             } catch (err) {
-                list.innerHTML = '<li>Error loading messages.</li>';
+                container.innerHTML = '<p>Error loading messages.</p>';
                 console.error(err);
             }
         }

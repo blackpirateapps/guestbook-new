@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raw Guestbook</title>
+</head>
+<body>
+
+    <h1>Guestbook</h1>
+
+    <form id="guestbook-form">
+        <label>Name (Max 50):</label><br>
+        <input type="text" id="name" maxlength="50" required><br><br>
+
+        <label>Website (Optional):</label><br>
+        <input type="url" id="website" placeholder="https://example.com"><br><br>
+
+        <label>Message:</label><br>
+        <textarea id="message" required></textarea><br><br>
+
+        <div style="display:none; opacity:0; position:absolute; left:-9999px;">
+            <label>Don't fill this out if you are human:</label>
+            <input type="text" id="_honey" name="_honey" tabindex="-1" autocomplete="off">
+        </div>
+
+        <button type="submit">Sign Guestbook</button>
+    </form>
+
+    <hr>
+
+    <h2>Messages</h2>
+    <ul id="entries-list">
+        <li>Loading...</li>
+    </ul>
+
+    <script>
+        const form = document.getElementById('guestbook-form');
+        const list = document.getElementById('entries-list');
+
+        async function loadEntries() {
+            try {
+                const res = await fetch('/api/guestbook');
+                const data = await res.json();
+
+                list.innerHTML = ''; 
+
+                data.forEach(entry => {
+                    const li = document.createElement('li');
+                    
+                    const nameSafe = document.createTextNode(entry.name).textContent;
+                    // We preserve newlines in the display for long messages
+                    const msgSafe = document.createTextNode(entry.message).textContent.replace(/\n/g, '<br>');
+                    const dateSafe = new Date(entry.created_at).toLocaleString();
+                    
+                    let authorHtml = `<strong>${nameSafe}</strong>`;
+                    if (entry.website) {
+                        const urlSafe = encodeURI(entry.website);
+                        authorHtml = `<a href="${urlSafe}" target="_blank"><strong>${nameSafe}</strong></a>`;
+                    }
+
+                    li.innerHTML = `${authorHtml} (${dateSafe}): <br> <div style="margin-top:5px;">${msgSafe}</div>`;
+                    list.appendChild(li);
+                });
+            } catch (err) {
+                list.innerHTML = '<li>Error loading messages.</li>';
+                console.error(err);
+            }
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const message = document.getElementById('message').value;
+            const website = document.getElementById('website').value;
+            const _honey = document.getElementById('_honey').value;
+
+            try {
+                const res = await fetch('/api/guestbook', {
+                    method: 'POST',
+                    body: JSON.stringify({ name, message, website, _honey }),
+                });
+
+                const json = await res.json();
+
+                if (res.ok) {
+                    document.getElementById('message').value = '';
+                    document.getElementById('_honey').value = ''; 
+                    loadEntries();
+                } else {
+                    alert('Error: ' + json.error);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error submitting form');
+            }
+        });
+
+        loadEntries();
+    </script>
+</body>
+</html>

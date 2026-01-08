@@ -8,33 +8,17 @@
         body { font-family: monospace; max-width: 800px; margin: 20px auto; padding: 0 10px; }
         .login-box { border: 1px solid #ccc; padding: 20px; max-width: 300px; margin: 50px auto; }
         
-        /* Collapsible Styling */
-        details.entry-details { 
-            border: 1px solid #ddd; 
-            margin-bottom: 5px; 
-            background: #fff;
-        }
+        details.entry-details { border: 1px solid #ddd; margin-bottom: 5px; background: #fff; }
         details.entry-details summary {
-            padding: 10px;
-            background: #f0f0f0;
-            cursor: pointer;
-            list-style: none; /* Hide default triangle in some browsers */
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            padding: 10px; background: #f0f0f0; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
         }
         details.entry-details summary:hover { background: #e0e0e0; }
-        details.entry-details[open] summary { border-bottom: 1px solid #ddd; }
         
-        /* Custom arrow for summary */
-        details.entry-details summary::after { content: '+'; font-weight: bold; }
-        details.entry-details[open] summary::after { content: '-'; }
-
         .entry-content { padding: 15px; }
-
         .pagination { margin: 20px 0; text-align: center;}
         button { cursor: pointer; padding: 5px 10px; }
-        input, textarea, select { width: 100%; box-sizing: border-box; margin-bottom: 8px; padding: 5px; }
+        input, textarea { width: 100%; box-sizing: border-box; margin-bottom: 8px; padding: 5px; }
         .hidden { display: none; }
         .actions { margin-top: 10px; display: flex; gap: 10px;}
         .danger { background-color: #ffcccc; border: 1px solid red; color: darkred; }
@@ -63,26 +47,22 @@
             <div style="padding: 15px; border: 1px solid #333; border-top: none;">
                 <label>Name</label>
                 <input type="text" id="new-name">
-                
                 <label>Website</label>
                 <input type="text" id="new-website">
                 
-                <label>Created At (ISO String)</label>
+                <label>Created At</label>
                 <div class="row">
                     <div class="col"><input type="text" id="new-date-raw" placeholder="YYYY-MM-DDTHH:MM:SSZ"></div>
-                    <div class="col" style="flex: 0 0 40px; text-align: center;">OR</div>
                     <div class="col"><input type="datetime-local" onchange="syncDate(this, 'new-date-raw')"></div>
                 </div>
 
                 <label>Message</label>
                 <textarea id="new-message" rows="3"></textarea>
-                
                 <button onclick="addEntry()">Save Entry</button>
             </div>
         </details>
 
         <hr>
-
         <div id="entries-container">Loading...</div>
 
         <div class="pagination">
@@ -117,12 +97,9 @@
             loadEntries();
         }
 
-        // Helper: Convert local datetime picker value to ISO string for the raw input
         function syncDate(picker, rawInputId) {
             if(picker.value) {
-                // Create date object from picker value
                 const d = new Date(picker.value);
-                // Convert to ISO string for DB
                 document.getElementById(rawInputId).value = d.toISOString();
             }
         }
@@ -157,9 +134,9 @@
                 const details = document.createElement('details');
                 details.className = 'entry-details';
                 
-                // Format date for display in summary
                 const dateDisplay = new Date(row.created_at).toLocaleString();
                 
+                // HTML Template for each row
                 details.innerHTML = `
                     <summary>
                         <span><strong>#${row.id}</strong> ${row.name}</span>
@@ -171,6 +148,16 @@
                         
                         <label>Website</label>
                         <input type="text" value="${row.website || ''}" id="site-${row.id}">
+
+                        <label>Created At (Raw)</label>
+                        <div class="row">
+                            <div class="col">
+                                <input type="text" value="${row.created_at}" id="date-raw-${row.id}">
+                            </div>
+                            <div class="col">
+                                <input type="datetime-local" onchange="syncDate(this, 'date-raw-${row.id}')">
+                            </div>
+                        </div>
                         
                         <label>Message</label>
                         <textarea rows="4" id="msg-${row.id}">${row.message}</textarea>
@@ -196,7 +183,6 @@
             const res = await api('create', { name, website, message, created_at });
             if (res) {
                 alert('Added!');
-                // clear inputs
                 document.getElementById('new-name').value = '';
                 document.getElementById('new-website').value = '';
                 document.getElementById('new-message').value = '';
@@ -209,8 +195,12 @@
             const name = document.getElementById(`name-${id}`).value;
             const website = document.getElementById(`site-${id}`).value;
             const message = document.getElementById(`msg-${id}`).value;
+            
+            // NEW: Get the date value
+            const created_at = document.getElementById(`date-raw-${id}`).value;
 
-            const res = await api('update', { id, name, website, message });
+            // Pass created_at to the API
+            const res = await api('update', { id, name, website, message, created_at });
             if (res) alert('Updated successfully');
         }
 

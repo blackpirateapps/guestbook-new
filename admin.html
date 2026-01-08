@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guestbook Admin</title>
+    <style>
+        body { font-family: monospace; max-width: 800px; margin: 20px auto; padding: 0 10px; }
+        .login-box { border: 1px solid #ccc; padding: 20px; max-width: 300px; margin: 50px auto; }
+        .entry { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; background: #f9f9f9; }
+        .pagination { margin: 20px 0; }
+        button { cursor: pointer; }
+        input, textarea { width: 100%; box-sizing: border-box; margin-bottom: 5px; }
+        .hidden { display: none; }
+        .actions { margin-top: 5px; }
+        .danger { color: red; }
+    </style>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="login-screen" class="login-box">
+        <h3>Admin Access</h3>
+        <input type="password" id="secret-input" placeholder="Enter ADMIN_SECRET">
+        <button onclick="login()">Enter</button>
+    </div>
+
+    <div id="dashboard" class="hidden">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h1>Admin Dashboard</h1>
+            <button onclick="logout()">Logout</button>
+        </div>
+
+        <details>
+            <summary><strong>+ Add / Import Entry</strong></summary>
+            <div style="border: 1px solid #000; padding: 10px; margin-top: 10px;">
+                <input type="text" id="new-name" placeholder="Name">
+                <input type="text" id="new-website" placeholder="Website (optional)">
+                <input type="text" id="new-date" placeholder="YYYY-MM-DDTHH:MM:SSZ (leave blank for now)">
+                <textarea id="new-message" placeholder="Message"></textarea>
+                <button onclick="addEntry()">Save Entry</button>
+            </div>
+        </details>
+
+        <hr>
+
+        <div id="entries-container">Loading...</div>
+
+        <div class="pagination">
+            <button onclick="changePage(-1)">Previous</button>
+            <span id="page-indicator">Page 1</span>
+            <button onclick="changePage(1)">Next</button>
+        </div>
+    </div>
+
+    <script>
+        let SECRET = localStorage.getItem('admin_secret') || '';
+        let CURRENT_PAGE = 1;
+
+        // --- AUTH ---
+        if (SECRET) showDashboard();
+
+        function login() {
+            const input = document.getElementById('secret-input').value;
+            if (!input) return alert('Enter secret');
+            SECRET = input;
+            localStorage.setItem('admin_secret', SECRET);
+            showDashboard();
+        }
+
+        function logout() {
+            localStorage.removeItem('admin_secret');
+            location.reload();
+        }
+
+        function showDashboard() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            loadEntries();
+        }
+
+        // --- API CALLER ---
+        async function api(action, data = {}) {
+            const res = await fetch('/api/admin', {
+                method: 'POST',
+                body: JSON.stringify({ action, secret: SECRET, ...data })
+            });
+            const json = await res.json();
+            if (res.status === 401) {
+                alert('Invalid Secret');
+                logout();
+                return null;
+            }
+            if (json.error) {
+                alert(json.error);
+                return null;
+            }
+            return json;
+        }
+
+        // --- CRUD ACTIONS ---
+
+        async function loadEntries() {
+            const data = await api('list', { page: CURRENT_PAGE });
+            if (!data) return;
+
+            const container = document.getElementById('entries-container');
+            container.innerHTML = '';
+            document.getElementById('page-indicator').innerText = `Page ${data.page} (Total: ${data.total})`;
+
+            data.rows.forEach(row => {
+                const div = document.createElement('div');
+                div.className = 'entry';
+                div.innerHTML = `
+                    <div>
+                        <strong>ID:</strong> ${row.id} | 
+                        <strong>Date:</strong> ${row.created_at}
+                    </div>
+                    <div style="margin-top:5px;">
+                        <input type="text" value="${row.name}" id="name-${row.id}">
+                        <input type="text" value="${row.website || ''}" placeholder="Website" id="site-${row.id}">
+                        <textarea rows="2" id="msg-${row.id}">${row.message}</textarea>
+                    </div>
+                    <div class="actions">
+                        <button onclick="updateEntry(${row.id})">Save Changes</button>
+                        <button class="danger" onclick="deleteEntry(${row.id})">Delete</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        async function addEntry() {
+            const name = document.getElementById('new-name').value;
+            const website = document.getElementById('new-website').value;
+            const message = document.getElementById('new-message').value;
+            const created_at = document.getElementById('new-date').value;
+
+            if (!name || !message) return alert('Name and Message required');
+
+            const res = await api('create', { name, website, message, created_at });
+            if (res) {
+                alert('Added!');
+                // clear inputs
+                document.getElementById('new-name').value = '';
+                document.getElementById('new-website').value = '';
+                document.getElementById('new-message').value = '';
+                document.getElementById('new-date').value = '';
+                loadEntries();
+            }
+        }
+
+        async function updateEntry(id) {
+            const name = document.getElementById(`name-${id}`).value;
+            const website = document.getElementById(`site-${id}`).value;
+            const message = document.getElementById(`msg-${id}`).value;
+
+            const res = await api('update', { id, name, website, message });
+            if (res) alert('Updated successfully');
+        }
+
+        async function deleteEntry(id) {
+            if(!confirm('Are you sure you want to delete this entry?')) return;
+            const res = await api('delete', { id });
+            if (res) loadEntries();
+        }
+
+        function changePage(dir) {
+            if (dir === -1 && CURRENT_PAGE === 1) return;
+            CURRENT_PAGE += dir;
+            loadEntries();
+        }
+    </script>
+</body>
+</html>

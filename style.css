@@ -1,4 +1,30 @@
 .main {
+font: sans-serif;
 max-width: 700px;
 margin: auto;
+}
+
+
+button {
+padding: .75rem;
+font-size: 1rem;
+border-radius: 5px;
+}
+h1, h2 {
+
+
+}
+label {
+font-size: 1.25rem;
+
+}
+input {
+padding: .25rem;
+}
+textarea {
+max-width: 100℅;
+min-width: 50%;
+height: 200px;
+font: sans-serif;
+padding: .5rem;
 }
